@@ -1,0 +1,112 @@
+:root {
+    --bg-color: #f0f4f8;
+    --card-bg: #ffffff;
+    --text-color: #1c2a38;
+    --accent-color: #4a90e2;
+    --success-glow: #7ed321;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+body {
+    margin: 0;
+    font-family: 'Lexend Deca', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#game-container {
+    text-align: center;
+    padding: 20px;
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+}
+
+.character-card {
+    background-color: var(--card-bg);
+    border-radius: 20px;
+    padding: 40px 20px;
+    box-shadow: 0 10px 20px var(--shadow-color);
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 250px;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+#character {
+    font-size: 180px;
+    font-weight: 700;
+    color: var(--text-color);
+    transition: color 0.3s ease;
+}
+
+#status {
+    font-size: 18px;
+    min-height: 25px;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+#transcript-display {
+    font-size: 16px;
+    min-height: 22px;
+    color: #888;
+    font-style: italic;
+}
+
+#start-btn {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 15px 30px;
+    font-size: 18px;
+    font-family: 'Lexend Deca', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(74, 144, 226, 0.4);
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+}
+
+#start-btn:hover {
+    background-color: #357abd;
+}
+
+#start-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 5px rgba(74, 144, 226, 0.4);
+}
+
+.correct-answer {
+    animation: success-animation 3s ease-out forwards;
+}
+
+.correct-answer .character-card {
+    box-shadow: 0 0 40px var(--success-glow);
+}
+
+.correct-answer #character {
+    color: var(--success-glow);
+}
+
+@keyframes success-animation {
+    0% {
+        background-color: var(--bg-color);
+    }
+    15% {
+        background-color: #dfffe2;
+    }
+    85% {
+        background-color: #dfffe2;
+    }
+    100% {
+        background-color: var(--bg-color);
+    }
+}
+
