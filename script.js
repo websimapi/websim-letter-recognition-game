@@ -6,6 +6,8 @@ const body = document.body;
 const levelDisplay = document.getElementById('level');
 const expCounterDisplay = document.getElementById('exp-counter');
 const progressBar = document.getElementById('progress-bar');
+const animationContainer = document.getElementById('animation-container');
+const progressBarWrapper = document.getElementById('progress-bar-wrapper');
 
 const characters = ['B', 'b', 'D', 'd', 'S', 's', 'Z', 'z', '2', '3', 'P', 'p', 'q'];
 const correctAnswers = {
@@ -107,6 +109,34 @@ function checkAnswer(transcript) {
     }
 }
 
+function createFallingGem() {
+    const gem = document.createElement('div');
+    gem.classList.add('falling-gem');
+    gem.textContent = '💎';
+    animationContainer.appendChild(gem);
+
+    const charRect = characterDisplay.getBoundingClientRect();
+    const containerRect = animationContainer.getBoundingClientRect();
+    const barRect = progressBarWrapper.getBoundingClientRect();
+
+    const startX = charRect.left + (charRect.width / 2) - containerRect.left;
+    const startY = charRect.top + (charRect.height / 2) - containerRect.top;
+    
+    // End position should be above the progress bar
+    const endY = barRect.top - containerRect.top;
+
+    gem.style.left = `${startX}px`;
+    gem.style.top = `${startY}px`;
+
+    // Trigger the animation
+    requestAnimationFrame(() => {
+        gem.style.transform = `translate(-50%, ${endY - startY}px) scale(0.5)`;
+        gem.style.opacity = '0';
+    });
+    
+    return gem;
+}
+
 function handleCorrectAnswer() {
     isCelebrating = true;
 
@@ -120,14 +150,20 @@ function handleCorrectAnswer() {
         expGained = 2;
     }
     
-    currentExp += expGained;
-    statusDisplay.textContent = `Correct! +${expGained}💎`;
+    const gem = createFallingGem();
+
+    gem.addEventListener('transitionend', () => {
+        gem.remove();
+        currentExp += expGained;
+        statusDisplay.textContent = `Correct! +${expGained}💎`;
+        
+        updateProgressUI();
+        
+        if (currentExp >= expToNextLevel) {
+            levelUp();
+        }
+    }, { once: true });
     
-    updateProgressUI();
-    
-    if (currentExp >= expToNextLevel) {
-        levelUp();
-    }
 
     body.classList.add('correct-answer');
     playSuccessSound();

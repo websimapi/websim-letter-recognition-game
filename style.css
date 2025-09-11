@@ -17,6 +17,7 @@ body {
     align-items: center;
     min-height: 100vh;
     -webkit-tap-highlight-color: transparent;
+    overflow: hidden; /* Prevent scrollbars from animation artifacts */
 }
 
 #game-container {
@@ -25,6 +26,26 @@ body {
     width: 100%;
     max-width: 400px;
     box-sizing: border-box;
+    position: relative; /* For positioning animation container */
+}
+
+#animation-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.falling-gem {
+    position: absolute;
+    font-size: 40px;
+    will-change: transform, opacity;
+    transition: transform 1s cubic-bezier(0.4, 0, 0.8, 1), opacity 1s ease-out;
+    transform: translate(-50%, 0) scale(1);
+    opacity: 1;
 }
 
 .character-card {
@@ -145,6 +166,34 @@ body {
     background: linear-gradient(90deg, #ffd700, #ffb14b);
     border-radius: 15px;
     transition: width 0.5s ease-in-out;
+    position: relative;
+    overflow: hidden;
+}
+
+#progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 40px;
+    transform: rotate(30deg) translateY(0);
+    animation: liquid-wave 2s linear infinite;
+    transform-origin: bottom left;
+}
+
+@keyframes liquid-wave {
+    0% {
+        transform: rotate(20deg) translateY(-20px);
+    }
+    50% {
+        transform: rotate(25deg) translateY(0);
+    }
+    100% {
+        transform: rotate(20deg) translateY(-20px);
+    }
 }
 
 #exp-text {
