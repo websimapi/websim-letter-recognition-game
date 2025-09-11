@@ -27,6 +27,7 @@ body {
     max-width: 400px;
     box-sizing: border-box;
     position: relative; /* For positioning animation container */
+    z-index: 1; /* Make sure it's below gems */
 }
 
 #animation-container {
@@ -41,11 +42,13 @@ body {
 
 .falling-gem {
     position: absolute;
+    top: -20px; /* Start off-screen */
+    left: -20px; /* Start off-screen */
     font-size: 40px;
-    will-change: transform, opacity;
-    transition: transform 1s cubic-bezier(0.4, 0, 0.8, 1), opacity 1s ease-out;
-    transform: translate(-50%, 0) scale(1);
-    opacity: 1;
+    will-change: transform;
+    pointer-events: none;
+    z-index: 20; /* Make sure gems are on top */
+    /* Transitions removed, physics engine controls movement */
 }
 
 .character-card {

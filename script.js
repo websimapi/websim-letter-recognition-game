@@ -26,6 +26,86 @@ const correctAnswers = {
     'q': ['lowercase q', 'lower case q', 'q'],
 };
 
+// Physics engine
+let engine;
+let world;
+const gemBodies = [];
+const gemElements = [];
+let ground;
+
+function setupPhysics() {
+    engine = Matter.Engine.create({
+        gravity: { y: 0.6 } // A bit lighter gravity
+    });
+    world = engine.world;
+
+    const gameContainerRect = document.getElementById('game-container').getBoundingClientRect();
+    const progressContainerRect = document.getElementById('progress-container').getBoundingClientRect();
+    const groundY = progressContainerRect.top;
+
+    // Walls
+    const wallOptions = { isStatic: true, render: { visible: false } };
+    ground = Matter.Bodies.rectangle(window.innerWidth / 2, groundY, window.innerWidth, 20, wallOptions);
+    const wallLeft = Matter.Bodies.rectangle(0, window.innerHeight / 2, 20, window.innerHeight, wallOptions);
+    const wallRight = Matter.Bodies.rectangle(window.innerWidth, window.innerHeight / 2, 20, window.innerHeight, wallOptions);
+    const ceiling = Matter.Bodies.rectangle(window.innerWidth / 2, 0, window.innerWidth, 20, wallOptions);
+    Matter.World.add(world, [ground, wallLeft, wallRight, ceiling]);
+
+    // Run the engine
+    Matter.Engine.run(engine);
+
+    // Collision detection
+    Matter.Events.on(engine, 'collisionStart', (event) => {
+        const pairs = event.pairs;
+        pairs.forEach(pair => {
+            const { bodyA, bodyB } = pair;
+            let gemBody = null;
+            if (bodyA === ground && bodyB.label === 'gem') {
+                gemBody = bodyB;
+            } else if (bodyB === ground && bodyA.label === 'gem') {
+                gemBody = bodyA;
+            }
+
+            if (gemBody) {
+                // Find the gem and its element
+                const index = gemBodies.indexOf(gemBody);
+                if (index !== -1) {
+                    const element = gemElements[index];
+
+                    // Remove from physics world
+                    Matter.World.remove(world, gemBody);
+
+                    // Remove from our tracking arrays
+                    gemBodies.splice(index, 1);
+                    gemElements.splice(index, 1);
+
+                    // Animate and remove element
+                    element.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+                    element.style.opacity = '0';
+                    element.style.transform += ' scale(0.5)';
+                    setTimeout(() => element.remove(), 300);
+
+                    // Add experience and update UI for this one gem
+                    currentExp += 1;
+                    updateProgressUI();
+                    if (currentExp >= expToNextLevel) {
+                        levelUp();
+                    }
+                }
+            }
+        });
+    });
+
+    // Start render loop
+    (function render() {
+        gemBodies.forEach((body, index) => {
+            const element = gemElements[index];
+            element.style.transform = `translate(${body.position.x}px, ${body.position.y}px) rotate(${body.angle}rad)`;
+        });
+        requestAnimationFrame(render);
+    })();
+}
+
 let currentCharacter = '';
 let gameRunning = false;
 let isCelebrating = false;
@@ -70,7 +150,6 @@ if (SpeechRecognition) {
     startBtn.disabled = true;
 }
 
-
 async function setupAudio() {
     if (audioContext) return;
     try {
@@ -109,32 +188,37 @@ function checkAnswer(transcript) {
     }
 }
 
-function createFallingGem() {
-    const gem = document.createElement('div');
-    gem.classList.add('falling-gem');
-    gem.textContent = '💎';
-    animationContainer.appendChild(gem);
-
+function createFallingGems(count) {
     const charRect = characterDisplay.getBoundingClientRect();
-    const containerRect = animationContainer.getBoundingClientRect();
-    const barRect = progressBarWrapper.getBoundingClientRect();
+    const startX = charRect.left + charRect.width / 2;
+    const startY = charRect.top + charRect.height / 2;
 
-    const startX = charRect.left + (charRect.width / 2) - containerRect.left;
-    const startY = charRect.top + (charRect.height / 2) - containerRect.top;
-    
-    // End position should be above the progress bar
-    const endY = barRect.top - containerRect.top;
+    for (let i = 0; i < count; i++) {
+        const gem = document.createElement('div');
+        gem.classList.add('falling-gem');
+        gem.textContent = '💎';
+        document.body.appendChild(gem); // Append to body to be above all other elements
 
-    gem.style.left = `${startX}px`;
-    gem.style.top = `${startY}px`;
+        const angle = Math.random() * Math.PI * 2;
+        const force = 0.02 + Math.random() * 0.02; // Increased force for more dynamic burst
 
-    // Trigger the animation
-    requestAnimationFrame(() => {
-        gem.style.transform = `translate(-50%, ${endY - startY}px) scale(0.5)`;
-        gem.style.opacity = '0';
-    });
-    
-    return gem;
+        const gemBody = Matter.Bodies.circle(startX, startY, 20, {
+            restitution: 0.7, // Bounciness
+            friction: 0.1,
+            frictionAir: 0.01,
+            label: 'gem',
+        });
+
+        // Apply a random upward-ish force
+        Matter.Body.applyForce(gemBody, gemBody.position, {
+            x: Math.cos(angle) * force,
+            y: (Math.sin(angle) * force) - 0.03 // Bias upwards
+        });
+
+        gemElements.push(gem);
+        gemBodies.push(gemBody);
+        Matter.World.add(world, gemBody);
+    }
 }
 
 function handleCorrectAnswer() {
@@ -150,20 +234,8 @@ function handleCorrectAnswer() {
         expGained = 2;
     }
     
-    const gem = createFallingGem();
-
-    gem.addEventListener('transitionend', () => {
-        gem.remove();
-        currentExp += expGained;
-        statusDisplay.textContent = `Correct! +${expGained}💎`;
-        
-        updateProgressUI();
-        
-        if (currentExp >= expToNextLevel) {
-            levelUp();
-        }
-    }, { once: true });
-    
+    createFallingGems(expGained);
+    statusDisplay.textContent = `Correct! +${expGained}💎`;
 
     body.classList.add('correct-answer');
     playSuccessSound();
@@ -194,6 +266,10 @@ startBtn.addEventListener('click', () => {
         // Resume audio context on user gesture
         if (audioContext && audioContext.state === 'suspended') {
             audioContext.resume();
+        }
+        
+        if (!engine) {
+            setupPhysics();
         }
         
         gameRunning = true;
