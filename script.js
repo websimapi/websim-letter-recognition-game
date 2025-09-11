@@ -23,6 +23,7 @@ const correctAnswers = {
 
 let currentCharacter = '';
 let gameRunning = false;
+let isCelebrating = false;
 let audioContext;
 let successSoundBuffer;
 
@@ -36,7 +37,7 @@ if (SpeechRecognition) {
     recognition.interimResults = false;
 
     recognition.onresult = (event) => {
-        if (!gameRunning) return;
+        if (!gameRunning || isCelebrating) return;
         
         const last = event.results.length - 1;
         const transcript = event.results[last][0].transcript.trim().toLowerCase();
@@ -97,13 +98,13 @@ function checkAnswer(transcript) {
 }
 
 function handleCorrectAnswer() {
-    gameRunning = false; // Pause listening during animation
+    isCelebrating = true;
     statusDisplay.textContent = "Correct!";
     body.classList.add('correct-answer');
     playSuccessSound();
 
     setTimeout(() => {
-        gameRunning = true;
+        isCelebrating = false;
         showNextCharacter();
     }, 3000);
 }
@@ -127,4 +128,3 @@ startBtn.addEventListener('click', () => {
         }
     }
 });
-
