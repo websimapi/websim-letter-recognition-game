@@ -3,6 +3,9 @@ const statusDisplay = document.getElementById('status');
 const startBtn = document.getElementById('start-btn');
 const transcriptDisplay = document.getElementById('transcript-display');
 const body = document.body;
+const levelDisplay = document.getElementById('level');
+const expCounterDisplay = document.getElementById('exp-counter');
+const progressBar = document.getElementById('progress-bar');
 
 const characters = ['B', 'b', 'D', 'd', 'S', 's', 'Z', 'z', '2', '3', 'P', 'p', 'q'];
 const correctAnswers = {
@@ -26,6 +29,12 @@ let gameRunning = false;
 let isCelebrating = false;
 let audioContext;
 let successSoundBuffer;
+
+// Game state
+let level = 1;
+let currentExp = 0;
+let expToNextLevel = 81;
+let answerStartTime = 0;
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
@@ -88,6 +97,7 @@ function showNextCharacter() {
     characterDisplay.textContent = currentCharacter;
     statusDisplay.textContent = "Say what you see...";
     transcriptDisplay.textContent = "";
+    answerStartTime = Date.now();
 }
 
 function checkAnswer(transcript) {
@@ -99,7 +109,26 @@ function checkAnswer(transcript) {
 
 function handleCorrectAnswer() {
     isCelebrating = true;
-    statusDisplay.textContent = "Correct!";
+
+    const timeTaken = (Date.now() - answerStartTime) / 1000; // in seconds
+    let expGained = 0;
+    if (timeTaken < 1) {
+        expGained = 5;
+    } else if (timeTaken <= 3) {
+        expGained = 3;
+    } else {
+        expGained = 2;
+    }
+    
+    currentExp += expGained;
+    statusDisplay.textContent = `Correct! +${expGained}💎`;
+    
+    updateProgressUI();
+    
+    if (currentExp >= expToNextLevel) {
+        levelUp();
+    }
+
     body.classList.add('correct-answer');
     playSuccessSound();
 
@@ -107,6 +136,20 @@ function handleCorrectAnswer() {
         isCelebrating = false;
         showNextCharacter();
     }, 3000);
+}
+
+function levelUp() {
+    level++;
+    currentExp -= expToNextLevel; // Carry over extra exp
+    expToNextLevel = Math.floor(expToNextLevel * 1.5); // Increase exp for next level
+    updateProgressUI();
+}
+
+function updateProgressUI() {
+    levelDisplay.textContent = level;
+    expCounterDisplay.textContent = `${currentExp} / ${expToNextLevel}`;
+    const progressPercent = Math.min((currentExp / expToNextLevel) * 100, 100);
+    progressBar.style.width = `${progressPercent}%`;
 }
 
 startBtn.addEventListener('click', () => {
